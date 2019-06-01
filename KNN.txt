@@ -1,0 +1,60 @@
+import pandas as pd
+import numpy as np
+
+data= pd.read_csv("c:\\loan prediction.csv")
+
+#Mode
+data1 = data.copy()
+data1['Self_Employed'].fillna(data1['Self_Employed'].mode()[0],inplace=True)
+data1['LoanAmount'].fillna(data1['LoanAmount'].mode()[0],inplace=True)
+data1['Credit_History'].fillna(data1['Credit_History'].mode()[0],inplace=True)
+data1['Dependents'].fillna(data1['Dependents'].mode()[0],inplace=True)
+data1['Loan_Amount_Term'].fillna(data1['Loan_Amount_Term'].mode()[0],inplace=True)
+data1['Credit_History'].fillna(data1['Credit_History'].mode()[0],inplace=True)
+
+#Median
+data1['LoanAmount'].fillna(data1['LoanAmount'].median(),inplace=True)
+
+#drop column
+data1.drop(['Loan_ID','Loan_Status'],axis=1,inplace=True)
+#dummies
+data2=data.iloc[:,1:-1]
+data2=pd.get_dummies(data1,columns=['Gender','Married','Dependents','Education','Self_Employed','Credit_History','Property_Area'])
+
+x = data2.values
+y=data.iloc[:,-1].values
+
+#standard scalar
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+X_train,X_test,y_train,y_test=train_test_split(x,y,test_size=.25,random_state=10)
+sc = StandardScaler()
+X_train = sc.fit_transform(X_train)
+X_test  = sc.fit_transform(X_test)
+
+#KNN Classifier
+
+from sklearn.neighbors import KNeighborsClassifier
+knn = KNeighborsClassifier(n_neighbors=5)
+knn.fit(X_train,y_train)
+y_pred = knn.predict(X_test)
+print('Accuracy on training date: {:.3f}'.format(knn.score(X_train,y_train)))
+print('Accuracy on training date: {:.3f}'.format(knn.score(X_test,y_test)))
+
+#Confussion Matrix
+from sklearn.metrics import confusion_matrix
+cm = confusion_matrix(y_test,y_pred)
+cm
+
+
+#Cross Validation
+from sklearn.model_selection import cross_val_score
+accuracies = cross_val_score(knn,x,y,cv=10)
+print('{:.3f}'.format(accuracies.mean()))
+
+#Pipeline
+
+from sklearn.pipeline import make_pipeline
+clf = make_pipeline(sc,knn)
+accuracies = cross_val_score(clf,x,y,cv=10)
+print('{:.3f}'.format(accuracies.mean()))
