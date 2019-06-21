@@ -1,0 +1,31 @@
+import pandas as pd
+import numpy as np
+import sklearn
+import matplotlib.pyplot as plt
+data = pd.read_csv("D:\\RegData.csv")
+
+x = data.iloc[:,:-1].values
+y = data.iloc[:,1].values
+
+
+from sklearn.model_selection import train_test_split
+x_train,x_test,y_train,y_test = train_test_split(x,y,test_size=.25,random_state=10)
+
+#creating the model
+from sklearn.linear_model import LinearRegression
+reg = LinearRegression()
+reg.fit(x_train,y_train)
+y_predict = reg.predict(x_test)
+
+print('Accuracy on training date: {:.3f}'.format(reg.score(x_train,y_train)))
+print('Accuracy on training date: {:.3f}'.format(reg.score(x_test,y_test)))
+
+print(reg.coef_)
+print(reg.intercept_)
+
+#scatter plot
+plt.scatter(x_train,y_train,color='green')
+plt.plot(x_train,reg.predict(x_train),color='blue')
+plt.title('Insurance Estimate-Training')
+plt.xlabel('Income')
+plt.ylabel('Insurance')
