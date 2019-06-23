@@ -1,0 +1,76 @@
+import pandas as pd
+data = pd.read_csv("D:\\amazon_alexa.tsv", sep="\t")
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from sklearn.feature_extraction.text import CountVectorizer,TfidfVectorizer
+import nltk
+
+data.shape
+data.feedback.value_counts()
+
+import string
+punctuations = string.punctuation
+
+#stop words
+from nltk.corpus import stopwords
+stop_words = set(stopwords.words("english"))
+
+mystopword = set(['...','also','would','still','dot'])
+
+def stopfun(example_sent):
+    filtered1 =[]
+    for w in example_sent:
+        if w not in stop_words:
+            if w not in string.punctuation:
+                if w not in mystopword:
+                    if len(w)>2:
+                        filtered1.append(w)
+    return filtered1
+
+#lemma
+from nltk.stem.wordnet import WordNetLemmatizer
+lem = WordNetLemmatizer()
+
+def lemfun(example_sent):
+    lem_words=[]
+    for w in example_sent:
+        lem_words.append(lem.lemmatize(w,'v'))
+    return lem_words
+
+def tokenizer(sentence):
+    #tokenization
+    mytokens=word_tokenize(sentence)
+    #Removing stop words & punctution
+    mytokens = stopfun(mytokens)
+    #mtokens=word for word in mytokens if word not in stop_words
+    #lemmanization
+    mytokens = lemfun(mytokens)
+    return mytokens
+
+str0 = "which has five points?"#for testing the tokenizer
+tokenizer(str0)
+
+X = data['verified_reviews']
+ylabels = data['feedback']
+
+#Count Vectorization
+cv_vector = CountVectorizer(tokenizer= tokenizer,max_df=.90,min_df=.05)
+x_train_cv = cv_vector.fit_transform(X)
+x_train_cv_data = pd.DataFrame(x_train_cv.toarray(),columns=list(cv_vector.get_feature_names()))
+
+#TfidfVectorizer
+tf_vector = TfidfVectorizer(tokenizer=tokenizer,max_df=.90,min_df=.05)
+x_train_tf = tf_vector.fit_transform(X)
+x_train_tf_data = pd.DataFrame(x_train_tf.toarray(),columns=list(tf_vector.get_feature_names()))
+
+x = x_train_tf_data.values
+y = ylabels.values
+
+from sklearn.model_selection import train_test_split
+X_train,X_test,y_train,y_test=train_test_split(x,y,test_size=.25,random_state=10)
+from sklearn.linear_model import LogisticRegression
+log_reg = LogisticRegression()
+log_reg.fit(X_train,y_train)
+y_pred = log_reg.predict(X_test)
+
+print('Accuracy on training date: {:.3f}'.format(log_reg.score(X_train,y_train)))
